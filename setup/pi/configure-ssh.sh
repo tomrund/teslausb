@@ -4,6 +4,8 @@ setup_progress "configuring ssh"
 auth_keys_file='/root/.ssh/authorized_keys'
 sshd_config_file='/etc/ssh/sshd_config'
 
+apt-get -y --force-yes install mosh
+
 # If the user has defined a public key for root SSH access apply it
 if ! [ -z "${SSH_ROOT_PUBLIC_KEY}" ]
 then
