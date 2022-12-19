@@ -3,7 +3,7 @@
 setup_progress "configuring ssh"
 
 # If requested, add the desired SSH public key into /root/.ssh/authorized_keys
-if [ "${SSH_ROOT_PUBLIC_KEY:-false}" != "false" ] && [ -n "${SSH_ROOT_PUBLIC_KEY}" ]
+if [ -n "${SSH_ROOT_PUBLIC_KEY:-}" ]
 then
   echo "${SSH_ROOT_PUBLIC_KEY}" > '/root/.ssh/authorized_keys'
 fi
