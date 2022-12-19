@@ -26,16 +26,15 @@ ln -s /mutable/archiveloop.log /var/www/html/
 ln -s /tmp/diagnostics.txt /var/www/html/
 mkdir /var/www/html/TeslaCam
 cp -rf "$SOURCE_DIR/teslausb-www/teslausb.nginx" /etc/nginx/sites-available
-cp -rf "$SOURCE_DIR/teslausb-www/teslausbsecure.nginx" /etc/nginx/sites-available
+ln -sf /etc/nginx/sites-available/teslausb.nginx /etc/nginx/sites-enabled/default
 
-# Setup nginx auth if WEB_USERNAME and WEB_PASSWORD have been defined
-if [ -z "${WEB_USERNAME}" -o -z "${WEB_PASSWORD}" ]
+# Setup /etc/nginx/.htpasswd if user requested web auth, otherwise disable auth_basic
+if [ "${WEB_AUTH_ENABLED:-false}" = "true" ] && [ -n "${WEB_USERNAME}" ] && [ -n "${WEB_PASSWORD}" ]
 then
-  ln -sf /etc/nginx/sites-available/teslausb.nginx /etc/nginx/sites-enabled/default
-else
   apt-get -y --force-yes install apache2-utils
   htpasswd -bc /etc/nginx/.htpasswd "$WEB_USERNAME" "$WEB_PASSWORD"
-  ln -sf /etc/nginx/sites-available/teslausbsecure.nginx /etc/nginx/sites-enabled/default
+else
+  sed -i 's/auth_basic "Restricted Content"/auth_basic off/' /etc/nginx/sites-available/teslausb.nginx
 fi
 
 # install the fuse layer needed to work around an incompatibility
