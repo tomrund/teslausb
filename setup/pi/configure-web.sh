@@ -29,7 +29,7 @@ cp -rf "$SOURCE_DIR/teslausb-www/teslausb.nginx" /etc/nginx/sites-available
 ln -sf /etc/nginx/sites-available/teslausb.nginx /etc/nginx/sites-enabled/default
 
 # Setup /etc/nginx/.htpasswd if user requested web auth, otherwise disable auth_basic
-if [ "${WEB_AUTH_ENABLED:-false}" = "true" ] && [ -n "${WEB_USERNAME}" ] && [ -n "${WEB_PASSWORD}" ]
+if [ -n "${WEB_USERNAME:-}" ] && [ -n "${WEB_PASSWORD:-}" ]
 then
   apt-get -y --force-yes install apache2-utils
   htpasswd -bc /etc/nginx/.htpasswd "$WEB_USERNAME" "$WEB_PASSWORD"
