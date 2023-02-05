@@ -172,7 +172,13 @@ function install_and_configure_tesla_api () {
     install_python3_pip
     pip3 install teslapy
     # check if the json file needs to be updated
-    readonly json=/mutable/tesla_api.json
+    # TODO Will this even work or will it be called before shares exist?
+    if [ -n "${TESLA_API_CREDENTIALS_SHARE_NAME:+x}" ]
+    then
+      readonly json=/mnt/teslaApiCredentialsArchive/tesla_api.json
+    else
+      readonly json=/mutable/tesla_api.json
+    fi
     if [ -e $json ] && ! grep -q '"id"' $json
     then
       log_progress "Updating tesla_api.py config file"
@@ -191,11 +197,15 @@ function install_and_configure_tesla_api () {
     install_python3_pip
     pip3 install teslapy
     # Perform the initial authentication
-    mount /mutable || log_progress "Failed to mount /mutable"
+    if [ -z "${TESLA_API_CREDENTIALS_SHARE_NAME:+x}" ]
+    then
+      mount /mutable || log_progress "Failed to mount /mutable"
+    fi
     if ! /root/bin/tesla_api.py list_vehicles
     then
       log_progress "tesla_api.py setup failed"
     fi
+    # TODO: Also would likely be nice to wipe the refresh token from the config if possible at this point
   else
     log_progress "Skipping tesla_api.py install because no credentials were provided"
   fi

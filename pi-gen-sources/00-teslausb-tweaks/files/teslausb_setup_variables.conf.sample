@@ -254,6 +254,13 @@ export WIFIPASS='your_pass'
 #
 # export TESLA_REFRESH_TOKEN=YOUR_REFRESH_TOKEN_GOES_HERE
 
+# Instead of storing Tesla API credentials locally on the Pi, TeslaUSB can optionally
+# store them on a network share to reduce risk in the event of a theft. The thief would
+# still have everything needed to retrieve your Tesla API credentials, but they'd have
+# to physically come to your house, login to your WiFi and access the share to retrieve them.
+# TODO: Should we recommend the user removes the refresh token above or add documentation about first time setup?
+# export TESLA_API_CREDENTIALS_SHARE_NAME=your_tesla_api_credentials_share_name
+
 # If you have more than one Tesla vehicle on the account, you must also provide
 # the name or VIN for the vehicle for which this TeslaUSB install will be used,
 # so that TeslaUSB can keep the correct vehicle awake.

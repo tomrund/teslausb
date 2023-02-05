@@ -124,33 +124,49 @@ then
   fi
   check_archive_mountable "$ARCHIVE_SERVER" "$MUSIC_SHARE_NAME"
 fi
+if [ -n "${TESLA_API_CREDENTIALS_SHARE_NAME:+x}" ]
+then
+  check_archive_mountable "$ARCHIVE_SERVER" "$TESLA_API_CREDENTIALS_SHARE_NAME"
+fi
+
+function create_archive_mount_point () {
+    if [ ! -e "$1" ]
+    then
+      mkdir "$1"
+    fi
+}
+
+function add_share_mount_point_to_fstab () {
+    local sharenameforstab="${1// /\\040}"
+    echo "//$ARCHIVE_SERVER/$sharenameforstab $2 cifs noauto,credentials=${credentials_file_path},iocharset=utf8,file_mode=0777,dir_mode=0777,$VERS_OPT,$SEC_OPT 0" >> /etc/fstab
+}
 
 function configure_archive () {
   log_progress "Configuring the archive..."
 
   local archive_path="/mnt/archive"
   local music_archive_path="/mnt/musicarchive"
-
-  if [ ! -e "$archive_path" ]
-  then
-    mkdir "$archive_path"
-  fi
+  local tesla_api_credentials_archive_path="/mnt/teslaApiCredentialsArchive"
 
   local credentials_file_path="/root/.teslaCamArchiveCredentials"
   write_archive_configs_to "$credentials_file_path"
 
+  # Clear out any existing Archive shares from fstab before creating new entries
   sed -i "/^.*\.teslaCamArchiveCredentials.*$/ d" /etc/fstab
-  local sharenameforstab="${SHARE_NAME// /\\040}"
-  echo "//$ARCHIVE_SERVER/$sharenameforstab $archive_path cifs noauto,credentials=${credentials_file_path},iocharset=utf8,file_mode=0777,dir_mode=0777,$VERS_OPT,$SEC_OPT 0" >> /etc/fstab
+
+  create_archive_mount_point "$archive_path"
+  add_share_mount_point_to_fstab "$SHARE_NAME" "$archive_path"
 
   if [ -n "${MUSIC_SHARE_NAME:+x}" ]
   then
-    if [ ! -e "$music_archive_path" ]
-    then
-      mkdir "$music_archive_path"
-    fi
-    local musicsharenameforstab="${MUSIC_SHARE_NAME// /\\040}"
-    echo "//$ARCHIVE_SERVER/$musicsharenameforstab $music_archive_path cifs noauto,credentials=${credentials_file_path},iocharset=utf8,file_mode=0777,dir_mode=0777,$VERS_OPT,$SEC_OPT 0" >> /etc/fstab
+    create_archive_mount_point "$music_archive_path"
+    add_share_mount_point_to_fstab "$MUSIC_SHARE_NAME" "$music_archive_path"
+  fi
+
+  if [ -n "${TESLA_API_CREDENTIALS_SHARE_NAME:+x}" ]
+  then
+    create_archive_mount_point "$tesla_api_credentials_archive_path"
+    add_share_mount_point_to_fstab "$TESLA_API_CREDENTIALS_SHARE_NAME" "$tesla_api_credentials_archive_path"
   fi
   log_progress "Configured the archive."
 }

@@ -24,7 +24,7 @@ SETTINGS = {
     'tesla_vin': '',
 }
 date_format = '%Y-%m-%d %H:%M:%S'
-# This dict stores the data that will be written to /mutable/tesla_api.json.
+# This dict stores the data that will be written to /api_creds_dir/tesla_api.json.
 # we load its contents from disk at the start of the script, and save them back
 # to the disk whenever the contents change.
 tesla_api_json = {
@@ -34,7 +34,7 @@ tesla_api_json = {
     'vehicle_id': 0,
 }
 
-mutable_dir = '/mutable'
+api_creds_dir = os.getenv('TESLA_API_CREDENTIALS_SHARE_NAME', '/mutable')
 
 def _invalidate_access_token():
     if not tesla_api_json.get('refresh_token') or tesla_api_json['refresh_token'] == '':
@@ -129,11 +129,11 @@ def _rest_request(url, method=None, data=None):
 
 def _get_api_token():
     """
-    Retrieves the API access token, either from /mutable/tesla_api.json,
+    Retrieves the API access token, either from /api_creds_dir/tesla_api.json,
     SETTINGS, or from the Tesla API by using the credentials in SETTINGS.
     If those are also not available, kill the script, since it can't continue.
     """
-    os.chdir(mutable_dir)
+    os.chdir(api_creds_dir)
     # If the token was already saved, work with that.
     if tesla_api_json['access_token']:
         # Due to what appears to be a bug with the fake-hwclock service,
@@ -199,11 +199,11 @@ def _get_id():
 
 def _load_tesla_api_json():
     """
-    Load the data stored in /mutable/tesla_api.json, if it exists.
+    Load the data stored in /api_creds_dir/tesla_api.json, if it exists.
     If it doesn't exist, write a file to that location with default values.
     """
     try:
-        with open(mutable_dir + '/tesla_api.json', 'r') as f:
+        with open(api_creds_dir + '/tesla_api.json', 'r') as f:
             _log('Loading mutable data from disk...')
             json_string = f.read()
     except FileNotFoundError:
@@ -228,7 +228,7 @@ def _load_tesla_api_json():
 
 def _write_tesla_api_json():
     """
-    Write the contents of the tesla_api_json dict to /mutable/tesla_api.json.
+    Write the contents of the tesla_api_json dict to /api_creds_dir/tesla_api.json.
     """
     def convert_dt(obj):
         # Converts datetime objects into 'YYYY-MM-DD HH:MM:SS' strings, since
@@ -236,8 +236,8 @@ def _write_tesla_api_json():
         if isinstance(obj, datetime):
             return obj.strftime(date_format)
 
-    with open(mutable_dir + '/tesla_api.json', 'w') as f:
-        _log('Writing ' + mutable_dir + '/tesla_api.json...')
+    with open(api_creds_dir + '/tesla_api.json', 'w') as f:
+        _log('Writing ' + api_creds_dir + '/tesla_api.json...')
         json_string = json.dumps(tesla_api_json, indent=2, default=convert_dt)
         f.write(json_string)
 

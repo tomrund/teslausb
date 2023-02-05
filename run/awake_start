@@ -1,6 +1,12 @@
 #!/bin/bash -eu
+if [ -n "${TESLA_API_CREDENTIALS_SHARE_NAME:+x}" ]
+then
+  tesla_api_creds_path="/mnt/teslaApiCredentialsArchive/cache.json"
+else
+  tesla_api_creds_path="/mutable/cache.json"
+fi
 
-if [ ! -x /root/bin/tesla_api.py ] || [ ! -s /mutable/cache.json ]
+if [ ! -x /root/bin/tesla_api.py ] || [ ! -s "$tesla_api_creds_path" ]
 then
   log "not keeping car awake."
   exit
