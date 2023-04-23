@@ -921,6 +921,13 @@ make_root_fs_readonly
 
 upgrade_packages
 
+if [ -n "${INSTALL_USER_REQUESTED_PACKAGES:-}" ]
+then
+  export INSTALL_USER_REQUESTED_PACKAGES
+  copy_script setup/pi/install-user-requested-packages.sh /tmp
+  /tmp/install-user-requested-packages.sh
+fi
+
 headless_setup_mark_setup_success
 
 # Flash for stage 5 headless (Mark success, FS readonly)
