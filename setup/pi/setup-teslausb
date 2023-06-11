@@ -923,9 +923,9 @@ upgrade_packages
 
 if [ -n "${INSTALL_USER_REQUESTED_PACKAGES:-}" ]
 then
-  export INSTALL_USER_REQUESTED_PACKAGES
-  copy_script setup/pi/install-user-requested-packages.sh /tmp
-  /tmp/install-user-requested-packages.sh
+  setup_progress "Installing user requested packages: ${INSTALL_USER_REQUESTED_PACKAGES}"
+  # shellcheck disable=SC2086
+  DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install $INSTALL_USER_REQUESTED_PACKAGES
 fi
 
 headless_setup_mark_setup_success
