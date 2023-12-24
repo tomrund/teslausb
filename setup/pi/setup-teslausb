@@ -918,8 +918,7 @@ sed -i '/source \/root\/bin\/setup-teslausb/d' /root/.bashrc
 if ! grep -q TESLAUSB_TIP1 /root/.bashrc
 then
   cat >> /root/.bashrc <<- EOC
-	if [ -n "\$PS1" ]
-	then
+	if [ -n "\$PS1" ]; then
 		cat << TESLAUSB_TIP1
 		Run 'bin/setup-teslausb upgrade' to update to the latest version of teslausb,
 		or run 'bin/remountfs_rw' to allow writing to the root partition.
