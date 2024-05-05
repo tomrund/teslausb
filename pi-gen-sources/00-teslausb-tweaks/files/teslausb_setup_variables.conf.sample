@@ -51,6 +51,16 @@ export SHARE_PASSWORD='password'
 # NOTE: the specified drive will be wiped and repartitioned.
 # export DATA_DRIVE=/dev/sda
 
+# TeslaUSB can optionally continuously archive new clips while the archive server
+# is available. The continuous archive frequency will be dictated by the
+# CONTINUOUS_ARCHIVES_INTERVAL. Archives will only be made if changes are found
+# in the latest snapshot and the archive server is available. Music will also be
+# updated after archiving clips if TeslaUSB is configured to do so. Please be
+# mindful that after each archive completes, TeslaUSB will briefly be disconnected
+# from the vehicle. Therefore, frequencies less than the SNAPSHOT_INTERVAL
+# or less than 30 minutes are likely ill-advised.
+# export CONTINUOUS_ARCHIVES_INTERVAL=180 # this number is in minutes
+
 # The car normally keeps an hour worth of RecentClips, however there have been
 # reports of that amount varying by country.
 # In order to keep a continuous record of RecentClips the snapshot interval

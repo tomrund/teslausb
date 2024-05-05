@@ -178,13 +178,20 @@ function mount_mountpoint () {
   fi
 }
 
-function ensure_mountpoint_is_mounted () {
+function mount_exists () {
   local mount_point="$1"
   local mount_exists=true
 
   findmnt --mountpoint "$mount_point" > /dev/null || mount_exists=false
 
-  if [ "$mount_exists" = true ]
+  $mount_exists
+  return
+}
+
+function ensure_mountpoint_is_mounted () {
+  local mount_point="$1"
+
+  if mount_exists "$mount_point"
   then
     log "$mount_point is already mounted."
   else
@@ -714,6 +721,44 @@ function set_time () {
   log "Failed to set time"
 }
 
+function continuous_archive_loop {
+  if [ -n "${CONTINUOUS_ARCHIVES_INTERVAL:-}" ]
+  then
+    log "Countinuous archiving enabled with $CONTINUOUS_ARCHIVES_INTERVAL minute interval..."
+    while true
+    do
+      sleep "$((CONTINUOUS_ARCHIVES_INTERVAL * 60))"
+      if ! mount_exists "$ARCHIVE_MOUNT" && archive_is_reachable && [[ $(find /backingfiles/snapshots -maxdepth 1 -mmin -"${CONTINUOUS_ARCHIVES_INTERVAL}" -name 'snap-*') ]]
+      then
+        log "Continuous archives found new changes in latest snapshot, archiving clips..."
+        fastblink
+
+        set_time
+
+        /root/bin/awake_start || true
+
+        archive_clips
+
+        /root/bin/awake_stop || true
+
+        doubleblink
+
+        connect_usb_drives_to_host
+      else
+        log "DEBUG: SKIPPING CONTINUOUS ARCHIVE DUE TO FAILED PRECONDITION"
+        AME=$(mount_exists "$ARCHIVE_MOUNT" && echo 1 || echo 0)
+        log "DEBUG: mount_exists ${ARCHIVE_MOUNT}: $AME"
+        AIR=$(archive_is_reachable && echo 1 || echo 0)
+        log "DEBUG: archive_is_reachable: $AIR"
+        FND=$(find /backingfiles/snapshots -maxdepth 1 -mmin -"${CONTINUOUS_ARCHIVES_INTERVAL}" -name 'snap-*')
+        log "DEBUG: find result: $FND"
+      fi
+      done
+  else
+    log "DEBUG: NO CONTINUOUS_ARCHIVES_INTERVAL SET, EXITING continuous_archive_loop"
+  fi
+}
+
 function snapshotloop {
   while true
   do
@@ -783,6 +828,36 @@ function set_sys_param() {
   fi
 }
 
+function blink_and_archive () {
+  local newly_connected="${1:-false}"
+    fastblink
+
+    set_time
+
+    /root/bin/awake_start || true
+
+    if $newly_connected
+    then
+      sleep "${ARCHIVE_DELAY:-20}"
+
+      # take a snapshot before archive_clips starts deleting files
+      /root/bin/make_snapshot.sh
+    fi
+
+    archive_clips
+
+    if $newly_connected
+    then
+      truncate_log
+    fi
+
+    /root/bin/awake_stop || true
+
+    doubleblink
+
+    connect_usb_drives_to_host
+}
+
 export -f mount_mountpoint
 export -f ensure_mountpoint_is_mounted
 export -f retry
@@ -799,27 +874,14 @@ set_sys_param /sys/devices/system/cpu/cpufreq/policy0/scaling_governor CPU_GOVER
 snapshotloop &
 logrotator &
 wifichecker &
+continuous_archive_loop &
 
 fix_errors_in_images
 /root/bin/make_snapshot.sh nofsck
 
 if archive_is_reachable
 then
-  fastblink
-
-  set_time
-
-  /root/bin/awake_start || true
-
-  archive_clips
-
-  /root/bin/awake_stop || true
-
-  doubleblink
-
-  connect_usb_drives_to_host
-
-  wait_for_archive_to_be_unreachable
+  blink_and_archive
 else
   slowblink
 
@@ -832,26 +894,7 @@ do
 
   wait_for_archive_to_be_reachable
 
-  fastblink
-
-  set_time
-
-  /root/bin/awake_start || true
-
-  sleep "${ARCHIVE_DELAY:-20}"
-
-  # take a snapshot before archive_clips starts deleting files
-  /root/bin/make_snapshot.sh
-
-  archive_clips
-
-  truncate_log
-
-  /root/bin/awake_stop || true
-
-  doubleblink
-
-  connect_usb_drives_to_host
+  blink_and_archive true
 
   wait_for_archive_to_be_unreachable
 
